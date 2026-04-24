@@ -1,0 +1,45 @@
+{
+  "dashboard": {
+    "title": "Recommendation Service Dashboard",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(recommendation_requests_total[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ]
+      },
+      {
+        "title": "Latency (p95)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(recommendation_latency_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95 latency"
+          }
+        ]
+      },
+      {
+        "title": "Cache Hit Ratio",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(recommendation_requests_total{status='cached'}[5m]) / rate(recommendation_requests_total[5m]) * 100"
+          }
+        ]
+      },
+      {
+        "title": "Database Connections",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServeEase - Find Service Providers Near You</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+        
+        .search-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-group input, .form-group select {
+            padding: 12px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group input:hover, .form-group select:hover {
+            border-color: #999;
+        }
+        
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .search-btn:active {
+            transform: translateY(0);
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .results-count {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            display: none;
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .providers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .provider-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .provider-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .provider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .provider-name {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .provider-category {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .provider-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .detail-label {
+            font-size: 0.8em;
+            color: #777;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .score-bar {
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.5s ease-out;
+        }
+        
+        .reasons {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .reason-tag {
+            display: inline-block;
+            background: #e8f4fd;
+            color: #0369a1;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            margin: 3px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .badge.verified {
+            background: #10b981;
+            color: white;
+        }
+        
+        .badge.rating {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            border: 2px solid #fecaca;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9em;
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 ServeEase</h1>
+            <p>Find the best service providers near you - Powered by AI Recommendations</p>
+        </div>
+        
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <span class="stat-value" id="responseTime">0</span>
+                <span class="stat-label">ms response</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="providerCount">0</span>
+                <span class="stat-label">providers found</span>
+            </div>
+        </div>
+        
+        <div class="search-card">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>📍 Latitude</label>
+                    <input type="number" id="lat" step="any" value="40.7128" placeholder="e.g., 40.7128">
+                </div>
+                <div class="form-group">
+                    <label>📍 Longitude</label>
+                    <input type="number" id="lng" step="any" value="-74.0060" placeholder="e.g., -74.0060">
+                </div>
+                <div class="form-group">
+                    <label>🔧 Category</label>
+                    <select id="category">
+                        <option value="">All Services</option>
+                        <option value="Plumbing">🚰 Plumbing</option>
+                        <option value="Electrical">⚡ Electrical</option>
+                        <option value="Carpentry">🔨 Carpentry</option>
+                        <option value="Cleaning">🧹 Cleaning</option>
+                        <option value="Moving">📦 Moving</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📏 Radius (km)</label>
+                    <input type="number" id="radius" min="1" max="100" value="10">
+                </div>
+                <div class="form-group">
+                    <label>📄 Results per page</label>
+                    <input type="number" id="limit" min="1" max="50" value="20">
+                </div>
+            </div>
+            <button class="search-btn" onclick="searchProviders()">
+                🔍 Find Providers Near Me
+            </button>
+        </div>
+        
+        <div class="results-header">
+            <h2 style="color: white;">📋 Recommended Providers</h2>
+            <span class="results-count" id="resultsCount">0 providers</span>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Finding the best providers near you...</p>
+        </div>
+        
+        <div id="error" class="error-message" style="display: none;"></div>
+        
+        <div id="results" class="providers-grid"></div>
+        
+        <div class="footer">
+            <p>Built with 🚀 by <a href="#">ServeEase Recommendation Engine</a> | 
+               <a href="http://localhost:8000/api/docs" target="_blank">API Docs</a> | 
+               <a href="http://localhost:8000/metrics" target="_blank">Metrics</a></p>
+        </div>
+    </div>
+    
+    <script>
+        async function searchProviders() {
+            const lat = document.getElementById('lat').value;
+            const lng = document.getElementById('lng').value;
+            const category = document.getElementById('category').value;
+            const radius = document.getElementById('radius').value;
+            const limit = document.getElementById('limit').value;
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+            
+            try {
+                const startTime = performance.now();
+                
+                // Build URL
+                let url = `http://localhost:8000/api/v1/recommendations?lat=${lat}&lng=${lng}&radius=${radius}&limit=${limit}`;
+                if (category) {
+                    url += `&category=${encodeURIComponent(category)}`;
+                }
+                
+                // Fetch data
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Failed to fetch recommendations');
+                }
+                
+                // Update stats
+                document.getElementById('stats').style.display = 'flex';
+                document.getElementById('responseTime').textContent = responseTime;
+                document.getElementById('providerCount').textContent = data.total;
+                document.getElementById('resultsCount').textContent = `${data.total} providers found`;
+                
+                // Display results
+                displayProviders(data.items);
+                
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Error: ' + error.message;
+                console.error('Search error:', error);
+            }
+        }
+        
+        function displayProviders(providers) {
+            const container = document.getElementById('results');
+            
+            if (!providers || providers.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: white;">No providers found in this area. Try expanding your search radius.</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            providers.forEach(provider => {
+                const scorePercent = Math.round(provider.final_score * 100);
+                
+                html += `
+                    <div class="provider-card">
+                        <div class="provider-header">
+                            <span class="provider-name">${provider.business_name || `Provider #${provider.provider_id}`}</span>
+                            <span class="provider-category">${provider.metadata.category}</span>
+                        </div>
+                        
+                        <div class="provider-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Distance</div>
+                                <div class="detail-value">${provider.distance_km.toFixed(2)} km</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Match Score</div>
+                                <div class="detail-value">${scorePercent}%</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Services</div>
+                                <div class="detail-value">${provider.metadata.service_count || 0}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Rating</div>
+                                <div class="detail-value">⭐ ${provider.metadata.avg_rating ? provider.metadata.avg_rating.toFixed(1) : 'N/A'}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: ${scorePercent}%"></div>
+                        </div>
+                        
+                        <div class="reasons">
+                            ${provider.all_reasons.map(reason => `<span class="reason-tag">${reason}</span>`).join('')}
+                        </div>
+                        
+                        <div style="margin-top: 10px; font-size: 0.8em; color: #999;">
+                            <span>Score: ${provider.final_score.toFixed(3)} </span>
+                            <span>📍 ${provider.distance_score.toFixed(2)} · 🏷️ ${provider.category_score.toFixed(2)} · ⭐ ${provider.quality_score.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Load initial results
+        window.onload = function() {
+            searchProviders();
+        };
+        
+        // Allow Enter key to search
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchProviders();
+            }
+        });
+    </script>
+</body>
+</html>
